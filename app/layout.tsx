@@ -3,8 +3,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/sonner";
-import { ConfirmDialogProvider } from "@/contexts/confirm-dialog-context";
-import ConfirmDialog from "@/components/confirm-dialog";
+import { AuthProvider } from "@/contexts/auth-context";
 
 const axiforma = localFont({
   src: [
@@ -33,8 +32,8 @@ const axiforma = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "El-Moore Staff",
-  description: "El-Moore internal management and marketer portal",
+  title: "El-Moore Marketer",
+  description: "El-Moore affiliate marketer portal",
 };
 
 export default function RootLayout({
@@ -49,11 +48,10 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-screen flex flex-col" suppressHydrationWarning>
-        <ConfirmDialogProvider>
+        <AuthProvider>
           <main className="flex-1">{children}</main>
-          <ConfirmDialog />
           <Toaster />
-        </ConfirmDialogProvider>
+        </AuthProvider>
       </body>
     </html>
   );
