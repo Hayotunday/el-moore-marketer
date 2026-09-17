@@ -3,10 +3,10 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { toast } from "sonner";
 import { Share2 } from "lucide-react";
-import PageHeader from "@/components/management/page-header";
-import StatCard from "@/components/management/stat-card";
-import StatusBadge from "@/components/management/status-badge";
-import SearchFilterBar from "@/components/management/search-filter-bar";
+import PageHeader from "@/components/marketer/page-header";
+import StatCard from "@/components/marketer/stat-card";
+import StatusBadge from "@/components/marketer/status-badge";
+import SearchFilterBar from "@/components/marketer/search-filter-bar";
 import {
   DataTable,
   DataTableHead,
@@ -15,7 +15,7 @@ import {
   DataTableRow,
   DataTableCell,
   DataTableEmpty,
-} from "@/components/management/data-table";
+} from "@/components/marketer/data-table";
 import { listMyReferrals } from "@/lib/api/referrals";
 import type { Referral } from "@/lib/api/types";
 import { formatCurrency, formatDate } from "@/lib/utils";

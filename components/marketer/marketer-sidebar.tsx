@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Menu, X, LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
-import { ROLE_LABELS } from "@/lib/rbac";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { MARKETER_NAV } from "./marketer-nav";
 import { getFullName } from "@/lib/utils";
 
@@ -15,14 +15,22 @@ export default function MarketerSidebar() {
   const { user, logout } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
   const handleLogout = async () => {
-    await logout();
-    router.push("/marketer");
+    setLoggingOut(true);
+    try {
+      await logout();
+      router.push("/marketer");
+    } finally {
+      setLoggingOut(false);
+      setShowLogoutConfirm(false);
+    }
   };
 
   return (
@@ -64,8 +72,8 @@ export default function MarketerSidebar() {
         {user && (
           <div className="border-t border-border/60 p-2">
             <button
-              onClick={handleLogout}
-              className="flex w-full items-center gap-3 rounded-sm px-3 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+              onClick={() => setShowLogoutConfirm(true)}
+              className="flex w-full items-center gap-3 rounded-sm px-3 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive cursor-pointer"
             >
               <LogOut className="h-4 w-4 shrink-0" />
               <span className="hidden truncate group-hover:inline">Log out</span>
@@ -93,11 +101,11 @@ export default function MarketerSidebar() {
                   {user ? getFullName(user) : "Marketer Portal"}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  {user ? ROLE_LABELS[user.role] : "Navigate the portal"}
+                  {user ? "Affiliate Marketer" : "Navigate the portal"}
                 </p>
               </div>
               <button
-                className="p-2 rounded-md bg-muted/70 text-foreground"
+                className="p-2 rounded-md bg-muted/70 text-foreground cursor-pointer"
                 onClick={() => setMobileOpen(false)}
                 aria-label="Close navigation"
               >
@@ -129,9 +137,9 @@ export default function MarketerSidebar() {
               <button
                 onClick={() => {
                   setMobileOpen(false);
-                  handleLogout();
+                  setShowLogoutConfirm(true);
                 }}
-                className="flex w-full items-center gap-3 rounded-md px-3 py-3 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10"
+                className="flex w-full items-center gap-3 rounded-md px-3 py-3 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10 cursor-pointer"
               >
                 <LogOut className="h-4 w-4 shrink-0" />
                 Log out
@@ -140,6 +148,18 @@ export default function MarketerSidebar() {
           </div>
         </div>
       )}
+
+      {/* Confirmation Dialog: Logout */}
+      <ConfirmDialog
+        open={showLogoutConfirm}
+        onOpenChange={setShowLogoutConfirm}
+        title="Log Out?"
+        description="Are you sure you want to log out of your marketer account?"
+        confirmText="Log Out"
+        variant="destructive"
+        loading={loggingOut}
+        onConfirm={handleLogout}
+      />
     </>
   );
 }

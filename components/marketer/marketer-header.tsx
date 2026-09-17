@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
-import { ROLE_LABELS } from "@/lib/rbac";
 import { findMarketerNavForPath } from "./marketer-nav";
 import { getFullName, getInitials } from "@/lib/utils";
 
@@ -32,7 +31,7 @@ export default function MarketerHeader() {
                 {getFullName(user)}
               </p>
               <p className="text-[11px] text-muted-foreground leading-tight">
-                {ROLE_LABELS[user.role]}
+                Affiliate Marketer
               </p>
             </div>
             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gold text-secondary-foreground text-xs font-bold overflow-hidden">

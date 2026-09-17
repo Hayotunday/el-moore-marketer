@@ -3,9 +3,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import * as authApi from "@/lib/api/auth";
 import { getStoredToken, setStoredToken, onAuthExpired } from "@/lib/api/client";
-import type { ManagementUser } from "@/lib/api/types";
-import type { Role } from "@/lib/rbac";
-import { getPagesForRole, canAccessPath } from "@/lib/rbac";
+import type { ManagementUser, Role } from "@/lib/api/types";
 
 export type { Role };
 export type User = ManagementUser;
@@ -16,8 +14,6 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<User>;
   logout: () => Promise<void>;
   refreshProfile: () => Promise<User>;
-  hasAccess: (pathname: string) => boolean;
-  pages: ReturnType<typeof getPagesForRole>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -98,17 +94,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return freshUser;
   };
 
-  const hasAccess = (pathname: string) => canAccessPath(user?.role, pathname);
-  const pages = getPagesForRole(user?.role);
-
   const value: AuthContextType = {
     user,
     isLoading,
     login,
     logout,
     refreshProfile,
-    hasAccess,
-    pages,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

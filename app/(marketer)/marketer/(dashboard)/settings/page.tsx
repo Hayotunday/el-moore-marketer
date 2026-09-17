@@ -3,24 +3,36 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { User, Lock, Trash2 } from "lucide-react";
-import PageHeader from "@/components/management/page-header";
+import PageHeader from "@/components/marketer/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useAuth } from "@/contexts/auth-context";
-import { updateUser, uploadUserAvatar, removeUserAvatar } from "@/lib/api/users";
-import { ROLE_LABELS } from "@/lib/rbac";
+import {
+  updateUser,
+  uploadUserAvatar,
+  removeUserAvatar,
+} from "@/lib/api/users";
 import { getFullName, getInitials } from "@/lib/utils";
 
 export default function MarketerSettingsPage() {
   const { user, refreshProfile } = useAuth();
-  const [profileForm, setProfileForm] = useState({ firstName: "", middleName: "", lastName: "", email: "" });
+  const [profileForm, setProfileForm] = useState({
+    firstName: "",
+    middleName: "",
+    lastName: "",
+    email: "",
+  });
   const [savingProfile, setSavingProfile] = useState(false);
+  const [showProfileConfirm, setShowProfileConfirm] = useState(false);
 
   const [password, setPassword] = useState("");
   const [savingPassword, setSavingPassword] = useState(false);
+  const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
 
   const [avatarBusy, setAvatarBusy] = useState(false);
+  const [showAvatarRemoveConfirm, setShowAvatarRemoveConfirm] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -33,42 +45,68 @@ export default function MarketerSettingsPage() {
     }
   }, [user]);
 
-  const handleSaveProfile = async () => {
+  const handleProfileSubmitClick = () => {
     if (!user) return;
-    if (!profileForm.firstName || !profileForm.lastName || !profileForm.email) {
+    if (!profileForm.firstName.trim() || !profileForm.lastName.trim() || !profileForm.email.trim()) {
       toast.error("First name, last name and email are required.");
       return;
     }
+    const hasChanges =
+      profileForm.firstName.trim() !== user.firstName ||
+      (profileForm.middleName?.trim() || "") !== (user.middleName || "") ||
+      profileForm.lastName.trim() !== user.lastName;
+
+    if (!hasChanges) {
+      toast.info("No profile changes detected.");
+      return;
+    }
+
+    setShowProfileConfirm(true);
+  };
+
+  const handleSaveProfile = async () => {
+    if (!user) return;
     setSavingProfile(true);
     try {
       await updateUser(user.id, {
-        firstName: profileForm.firstName,
-        middleName: profileForm.middleName || undefined,
-        lastName: profileForm.lastName,
-        email: profileForm.email,
+        firstName: profileForm.firstName.trim(),
+        middleName: profileForm.middleName?.trim() || undefined,
+        lastName: profileForm.lastName.trim(),
+        email: profileForm.email.trim(),
       });
       await refreshProfile();
       toast.success("Profile updated.");
+      setShowProfileConfirm(false);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not update profile.");
+      toast.error(
+        err instanceof Error ? err.message : "Could not update profile.",
+      );
     } finally {
       setSavingProfile(false);
     }
   };
 
-  const handleChangePassword = async () => {
+  const handlePasswordSubmitClick = () => {
     if (!user) return;
     if (password.length < 12) {
       toast.error("Password must be at least 12 characters.");
       return;
     }
+    setShowPasswordConfirm(true);
+  };
+
+  const handleChangePassword = async () => {
+    if (!user) return;
     setSavingPassword(true);
     try {
       await updateUser(user.id, { password });
       setPassword("");
       toast.success("Password updated.");
+      setShowPasswordConfirm(false);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not update password.");
+      toast.error(
+        err instanceof Error ? err.message : "Could not update password.",
+      );
     } finally {
       setSavingPassword(false);
     }
@@ -83,7 +121,9 @@ export default function MarketerSettingsPage() {
       await refreshProfile();
       toast.success("Avatar updated.");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not upload avatar.");
+      toast.error(
+        err instanceof Error ? err.message : "Could not upload avatar.",
+      );
     } finally {
       setAvatarBusy(false);
       e.target.value = "";
@@ -97,8 +137,11 @@ export default function MarketerSettingsPage() {
       await removeUserAvatar(user.id);
       await refreshProfile();
       toast.success("Avatar removed.");
+      setShowAvatarRemoveConfirm(false);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not remove avatar.");
+      toast.error(
+        err instanceof Error ? err.message : "Could not remove avatar.",
+      );
     } finally {
       setAvatarBusy(false);
     }
@@ -119,7 +162,11 @@ export default function MarketerSettingsPage() {
         <div className="flex items-center gap-4">
           <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gold text-secondary-foreground text-lg font-bold">
             {user.avatarUrl ? (
-              <img src={user.avatarUrl} alt={getFullName(user)} className="h-full w-full object-cover" />
+              <img
+                src={user.avatarUrl}
+                alt={getFullName(user)}
+                className="h-full w-full object-cover"
+              />
             ) : (
               getInitials(user)
             )}
@@ -138,7 +185,12 @@ export default function MarketerSettingsPage() {
               </span>
             </label>
             {user.avatarUrl && (
-              <Button variant="ghost" size="sm" onClick={handleRemoveAvatar} disabled={avatarBusy}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowAvatarRemoveConfirm(true)}
+                disabled={avatarBusy}
+              >
                 <Trash2 className="h-4 w-4" /> Remove
               </Button>
             )}
@@ -155,38 +207,36 @@ export default function MarketerSettingsPage() {
             <Label>First Name</Label>
             <Input
               value={profileForm.firstName}
-              onChange={(e) => setProfileForm((f) => ({ ...f, firstName: e.target.value }))}
+              onChange={(e) =>
+                setProfileForm((f) => ({ ...f, firstName: e.target.value }))
+              }
             />
           </div>
           <div className="grid gap-2">
             <Label>Last Name</Label>
             <Input
               value={profileForm.lastName}
-              onChange={(e) => setProfileForm((f) => ({ ...f, lastName: e.target.value }))}
+              onChange={(e) =>
+                setProfileForm((f) => ({ ...f, lastName: e.target.value }))
+              }
             />
           </div>
           <div className="grid gap-2">
             <Label>Middle Name (optional)</Label>
             <Input
               value={profileForm.middleName}
-              onChange={(e) => setProfileForm((f) => ({ ...f, middleName: e.target.value }))}
+              onChange={(e) =>
+                setProfileForm((f) => ({ ...f, middleName: e.target.value }))
+              }
             />
           </div>
           <div className="grid gap-2">
             <Label>Email</Label>
-            <Input
-              type="email"
-              value={profileForm.email}
-              onChange={(e) => setProfileForm((f) => ({ ...f, email: e.target.value }))}
-            />
+            <Input type="email" value={profileForm.email} disabled />
           </div>
         </div>
-        <div className="grid gap-2 sm:max-w-xs">
-          <Label>Role</Label>
-          <p className="text-sm text-muted-foreground">{ROLE_LABELS[user.role]}</p>
-        </div>
         <div className="flex justify-end">
-          <Button onClick={handleSaveProfile} disabled={savingProfile}>
+          <Button onClick={handleProfileSubmitClick} disabled={savingProfile}>
             {savingProfile ? "Saving…" : "Save Changes"}
           </Button>
         </div>
@@ -206,11 +256,48 @@ export default function MarketerSettingsPage() {
           />
         </div>
         <div className="flex justify-end">
-          <Button onClick={handleChangePassword} disabled={savingPassword || !password}>
+          <Button
+            onClick={handlePasswordSubmitClick}
+            disabled={savingPassword || !password}
+          >
             {savingPassword ? "Updating…" : "Update Password"}
           </Button>
         </div>
       </div>
+
+      {/* Confirmation Dialog: Update Profile */}
+      <ConfirmDialog
+        open={showProfileConfirm}
+        onOpenChange={setShowProfileConfirm}
+        title="Update Profile Details?"
+        description="Are you sure you want to save these changes to your profile information?"
+        confirmText="Yes, Update Profile"
+        loading={savingProfile}
+        onConfirm={handleSaveProfile}
+      />
+
+      {/* Confirmation Dialog: Change Password */}
+      <ConfirmDialog
+        open={showPasswordConfirm}
+        onOpenChange={setShowPasswordConfirm}
+        title="Change Password?"
+        description="Are you sure you want to change your password? You will need to use your new password next time you sign in."
+        confirmText="Yes, Change Password"
+        loading={savingPassword}
+        onConfirm={handleChangePassword}
+      />
+
+      {/* Confirmation Dialog: Remove Avatar */}
+      <ConfirmDialog
+        open={showAvatarRemoveConfirm}
+        onOpenChange={setShowAvatarRemoveConfirm}
+        title="Remove Profile Photo?"
+        description="Are you sure you want to remove your profile photo? This action cannot be undone."
+        confirmText="Remove Photo"
+        variant="destructive"
+        loading={avatarBusy}
+        onConfirm={handleRemoveAvatar}
+      />
     </div>
   );
 }
